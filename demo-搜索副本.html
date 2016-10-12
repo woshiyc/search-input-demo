@@ -1,0 +1,184 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8">
+  <title>队列</title>
+  <style>
+    body{
+      background-color: #333;
+      margin: 0px;
+      padding: 0px;
+    }
+    .box{
+      width: 1000px;
+      height: 200px;
+      padding-top: 90px;
+      background-color: #ccc;
+      padding-left: 100px;
+    }
+    form{
+      background-color: #fff;
+      width: 175px;
+      height: 20px;
+    }
+    .search-text{
+      outline: none;
+    }
+    .suggest{
+      display: none;
+      width: 175px;
+      background-color: #eea;
+    }
+    .suggest ul{
+      margin: 0px;
+      padding: 0px;
+    }
+    .suggest ul li{
+      line-height: 25px;
+      list-style: none;
+    }
+    .suggest ul li:hover{
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <form action="https://cn.bing.com/search" target="_blank" id="search-form">
+      <input type="text" class="search-text" id="search-input" x-webkit-speech=""/>
+      <input type="submit" class="search-submit" value="搜索" />
+    </form>
+      <input type="text"  />
+  </div>
+  <div class="suggest" id="search-suggest">
+    <ul id="search-result">
+      <li>搜索结果1</li>
+      <li>搜索结果2</li>
+      <li>搜索结果3</li>
+    </ul>
+  </div>
+  <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+  <script>//jQuery实现ajax 搜索框效果
+    $('#search-input').bind('keyup', function(){
+      var jqueryInput = $(this);
+      var searchText = jqueryInput.val();//取得文本框输入的内容
+      $.get('http://api.bing.com/qsonhs.aspx?q=' + searchText,function(d){
+        var d = d.AS.Results[0].Suggest;
+        for(var i = 0; i < d.length; i++){
+          html += '<li>' + d[i].Txt + '<li>';
+        }
+        $('#search-result').html(html);
+        $('#search-suggest').show().css({
+          top: $('#search-form').offset().top + $("#search-form").height(),
+          left: $('#search-form').offset().left,
+          position: 'absolute'
+        });
+      },'json');
+    });
+
+    $(document).bind('click',function(){
+      $('#search-suggest').hide();
+    })
+    $(document).delegate('li','click',function(){
+      var keyword = $(this).text();
+      location.href = 'http://cn.bing.com/search?q=' + keyword;
+    })
+  </script>
+
+
+
+
+
+
+
+
+
+
+  <script>//原生JS实现搜索框效果
+    var getDOM = function(id){
+      return document.getElementById(id);
+    }
+
+    var addEvent = function(id, event, fn){// id:ID event:事件类型 fn:响应事件的一个回调函数   可以通过重复调用从而绑定多个事件
+      var el = getDOM(id) || document; //防止用户传的id不存在返回空值导致报错
+      if (el.addEventListener) {//addEventListener适用于非IE浏览器
+        el.addEventListener(event, fn, false);//事件，回调函数，默认false
+      }else if (el.attachEvent) {//attachEvent适用于ie浏览器
+        el.attachEvent('on' + event, fn);//事件前需要加on 回调函数
+      }
+      //el.onclick = function(){}该方法只可以绑定一个事件，如果再调用则会覆盖之前的事件
+    }
+
+
+    var getElementLeft = function(element){
+      var actualLeft = element.offsetLeft;
+      var current = element.offsetParent;//获取父元素
+
+      while (current !== null){
+        actualLeft += current.offsetLeft;//获取父元素相对其父元素的左边距
+        current = current.offsetParent;
+      }
+      return actualLeft
+    }
+
+    var getElementTop = function(element){
+      var actualTop = element.offsetTop;
+      var current = element.offsetParent;
+
+      while(current !== null){
+        actualTop += current.offsetTop;
+        current = current.offsetParent;
+      }
+      return actualTop;
+    }
+
+    var ajaxGet = function(url,callback){
+      var _xhr = null;
+      if (window.XMLHttpRequest) {
+        _xhr = new window.XMLHttpRequest();//非ie浏览器发送请求的方法，可直接实例化调用
+      } else if(window.ActiveXObject){
+        _xhr = new ActiveXObject('Msxml2.XMLHTTP');//ie浏览器发送请求方法
+      }
+      _xhr.onreadysyayechange = function() {
+        if (_xhr.readyState == 4 && _xhr.status == 200) {//这是请求成功的固定状态
+          callback(JSON.parse(_xhr.reponseText));//通过JSON.parse可以将json字符串转化为可识别的对象
+        }
+      }
+      _xhr.open('get', url, false);//要使用Ajax技术，第三个参数必须设置为false:意思就是使用异步的方式从服务器获取数据
+      _xhr.send(null);//默认传null即可，向服务端发送数据
+    }
+    
+    alert('没理解！！！！！！！');
+    var delegateEvent = function(target,event,fn){//为js动态生成的网页元素添加入事件时，通常需要使用事件代理来实现
+      addEvent(document,event,function(e){
+        if (e.target.nodeName == target.toUpperCase()) {//判断用户点击的元素和当前元素标签名称相同则会触发事件
+          fn.call(e.target);
+        }
+      });
+    }
+    
+    addEvent('search-input','keyup',function(){
+      var searchText = getDOM('search_input').value;
+      ajaxGet('http://api.bing.com/qsonhs.aspx?q='+searchText,function(d){//URL是由服务器决定的
+        var d = d.AS.Results[0].Suggests;//取得服务器传入的数据，并把它拼成对应的html字符串
+        var html = '';
+        for(var i=0; i<d.length; i++){
+          html+='<li>' + d[i].Txt + '</li>';
+        }
+        var _dom = getDOM('search-suggest');//缓存已经获得好元素，有利于提升性能
+        getDOM('search-result').innerHTML = html;
+        _dom.style.top = getElementTop(getDOM('search-form')) + 20 + 'px';
+        _dom.style.left = getElementLeft(getDOM('search-form')) + 'px';
+        _dom.style.position = 'absolute';
+        _dom.style.display = 'block';
+      });
+    });
+
+    delegateEvent('li','click',function(){
+      var keyword = this.innerHTML;
+      location.href = 'http://cn.bing.com/search?q' + keyword;
+    });
+
+  </script>
+</body>
+</html>
